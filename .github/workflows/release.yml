@@ -39,7 +39,7 @@ jobs:
           key: ${{ matrix.target }}
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }} -p tzbucket
+        run: cargo build --release --target ${{ matrix.target }} -p tzbucket-cli
 
       - name: Package (Unix)
         if: runner.os != 'Windows'

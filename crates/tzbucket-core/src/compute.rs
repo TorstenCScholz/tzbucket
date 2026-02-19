@@ -4,7 +4,7 @@
 //! correctly handles DST transitions by computing boundaries in local
 //! time and converting each boundary independently to UTC.
 
-use chrono::{DateTime, Datelike, NaiveDate, TimeZone, Utc};
+use chrono::{DateTime, Datelike, NaiveDate, Utc};
 use chrono_tz::Tz;
 
 use crate::models::{Bucket, BucketResult, InputTimestamp, Interval, WeekStart};
@@ -69,29 +69,10 @@ pub fn compute_bucket(
     let start_utc = local_midnight_to_utc(start_local_date, tz);
     let end_utc = local_midnight_to_utc(end_local_date, tz);
 
-    // Format local boundaries with their actual offsets
-    let start_local_dt = tz
-        .with_ymd_and_hms(
-            start_local_date.year(),
-            start_local_date.month(),
-            start_local_date.day(),
-            0,
-            0,
-            0,
-        )
-        .single()
-        .unwrap();
-    let end_local_dt = tz
-        .with_ymd_and_hms(
-            end_local_date.year(),
-            end_local_date.month(),
-            end_local_date.day(),
-            0,
-            0,
-            0,
-        )
-        .single()
-        .unwrap();
+    // Format local boundaries from the resolved UTC instants.
+    // This avoids panicking in zones where local midnight can be nonexistent.
+    let start_local_dt = start_utc.with_timezone(&tz);
+    let end_local_dt = end_utc.with_timezone(&tz);
 
     Bucket {
         key,

@@ -1,5 +1,7 @@
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use std::process::{Command, Output};
 
 use similar::{ChangeTag, TextDiff};
@@ -276,6 +278,88 @@ fn test_range_berlin_march_2026() {
     assert_json_eq(&actual, &expected);
 }
 
+#[test]
+fn test_range_end_is_exclusive() {
+    let output = run_cli(&[
+        "range",
+        "--tz",
+        "Europe/Berlin",
+        "--interval",
+        "day",
+        "--start",
+        "2026-03-27T00:00:00Z",
+        "--end",
+        "2026-03-28T23:00:00Z",
+        "--output-format",
+        "json",
+    ]);
+
+    assert!(
+        output.status.success(),
+        "CLI failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let actual = String::from_utf8(output.stdout).expect("Output is not valid UTF-8");
+    let json: serde_json::Value = serde_json::from_str(&actual).expect("Invalid JSON output");
+    let keys: Vec<String> = json
+        .as_array()
+        .expect("Expected JSON array")
+        .iter()
+        .map(|bucket| {
+            bucket["key"]
+                .as_str()
+                .expect("Expected key to be a string")
+                .to_string()
+        })
+        .collect();
+
+    assert_eq!(keys, vec!["2026-03-27", "2026-03-28"]);
+}
+
+#[test]
+fn test_bucket_does_not_panic_on_nonexistent_local_midnight() {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_tzbucket"))
+        .args([
+            "bucket",
+            "--tz",
+            "America/Sao_Paulo",
+            "--interval",
+            "day",
+            "--format",
+            "rfc3339",
+            "--output-format",
+            "json",
+            "--stdin",
+        ])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn tzbucket");
+
+    {
+        let stdin = child.stdin.as_mut().expect("Missing stdin");
+        stdin
+            .write_all(b"2018-11-04T03:30:00Z\n")
+            .expect("Failed to write stdin");
+    }
+
+    let output = child.wait_with_output().expect("Failed to wait on child");
+
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "Expected successful exit, stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let stdout = String::from_utf8(output.stdout).expect("Output is not valid UTF-8");
+    let first_line = stdout.lines().next().expect("Expected one output line");
+    let json: serde_json::Value = serde_json::from_str(first_line).expect("Invalid JSON output");
+    assert_eq!(json["bucket"]["key"], "2018-11-04");
+}
+
 // =============================================================================
 // Explain Tests - Nonexistent Time
 // =============================================================================
@@ -336,6 +420,10 @@ fn test_explain_nonexistent_error() {
         "Expected error message about nonexistent time, got: {}",
         stderr
     );
+
+    let error_json: serde_json::Value = serde_json::from_str(&stderr).expect("Expected JSON error");
+    assert_eq!(error_json["exit_code"], 2);
+    assert_eq!(error_json["status"], "nonexistent");
 }
 
 // =============================================================================
