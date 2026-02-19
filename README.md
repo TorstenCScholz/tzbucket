@@ -2,7 +2,7 @@
 
 > DST-safe time bucketing for analytics and ETL pipelines.
 
-[![CI](https://github.com/TorstenCScholz/tzbucket.git/actions/workflows/ci.yml/badge.svg)](https://github.com/TorstenCScholz/tzbucket.git/actions/workflows/ci.yml)
+[![CI](https://github.com/TorstenCScholz/tzbucket/actions/workflows/ci.yml/badge.svg)](https://github.com/TorstenCScholz/tzbucket/actions/workflows/ci.yml)
 
 ## What is tzbucket?
 
@@ -33,7 +33,7 @@ Naive local grouping often gets these boundaries wrong. `tzbucket` computes them
 cargo install --path crates/tzbucket-cli
 ```
 
-Or download a pre-built binary from [Releases](https://github.com/TorstenCScholz/tzbucket.git/releases).
+Or download a pre-built binary from [Releases](https://github.com/TorstenCScholz/tzbucket/releases).
 
 ## Quickstart
 
