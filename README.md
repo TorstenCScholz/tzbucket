@@ -171,6 +171,10 @@ Note: JSON errors are emitted to **stderr**.
 
 For detailed DST examples and behavior notes, see [`docs/dst_notes.md`](docs/dst_notes.md).
 
+## ETL Integration
+
+For practical, real-world pipeline patterns (Spark, Airflow, dbt/warehouse, Kubernetes batch), see [`docs/etl_integration.md`](docs/etl_integration.md).
+
 ## Development
 
 ```bash
@@ -189,6 +193,7 @@ cargo fmt --all
 - [`docs/dst_notes.md`](docs/dst_notes.md) - DST transition behavior
 - [`docs/output_format.md`](docs/output_format.md) - Output and error contract
 - [`docs/architecture.md`](docs/architecture.md) - Project architecture
+- [`docs/etl_integration.md`](docs/etl_integration.md) - Integration patterns for ETL pipelines
 
 ## License
 
