@@ -626,13 +626,7 @@ fn golden_json_output() {
             )
         });
 
-        if actual != expected {
-            let diff = diff_strings(&expected, &actual);
-            panic!(
-                "Golden test mismatch for {stem}:\n\n\
-                 {diff}\n\n\
-                 Run with UPDATE_GOLDEN=1 to refresh snapshots"
-            );
-        }
+        // Use JSON-aware comparison instead of string comparison
+        assert_json_lines_eq(&actual, &expected);
     }
 }
