@@ -29,4 +29,4 @@ A clear description of the bug.
 ## Environment
 
 - OS:
-- Version: (`tool-cli --version`)
+- Version: (`tzbucket --version`)

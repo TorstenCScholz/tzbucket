@@ -23,7 +23,7 @@ If you add a new text fixture to `fixtures/`:
 1. Place your `.txt` file in `fixtures/`
 2. Generate the golden file:
    ```sh
-   UPDATE_GOLDEN=1 cargo test -p tool-cli --test golden_tests
+   UPDATE_GOLDEN=1 cargo test -p tzbucket-cli --test golden_tests
    ```
 3. Review the generated `golden/<name>.json` for correctness
 4. Commit both the fixture and golden file

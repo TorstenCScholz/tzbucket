@@ -6,26 +6,26 @@
 
 ## What is tzbucket?
 
-`tzbucket` is a CLI tool that assigns UTC timestamps to time buckets (day, hour, etc.) in a specific timezone. Unlike simple date grouping, tzbucket correctly handles Daylight Saving Time (DST) transitions, ensuring your analytics and ETL pipelines produce accurate results.
+`tzbucket` is a CLI tool that assigns UTC timestamps to calendar buckets (`day`, `week`, `month`) in a specific IANA timezone. It handles DST transitions correctly, so your analytics and ETL boundaries stay accurate.
 
-## Why does this matter?
+## Why this matters
 
-Calendar-based bucketing is common in data pipelines—grouping events by day, calculating daily aggregates, or generating reports. But DST makes this tricky:
+Calendar grouping is common in data pipelines, but DST creates edge cases:
 
-- **23-hour days**: When clocks spring forward, a "day" has only 23 hours
-- **25-hour days**: When clocks fall back, a "day" has 25 hours
-- **Nonexistent times**: 02:30 might not exist on DST transition days
-- **Ambiguous times**: 02:30 might occur twice on fall-back days
+- **23-hour days** on spring-forward transitions
+- **25-hour days** on fall-back transitions
+- **Nonexistent local times** (skipped hour)
+- **Ambiguous local times** (repeated hour)
 
-Simple approaches like `date_trunc('day', ts AT TIME ZONE 'Europe/Berlin')` produce wrong bucket boundaries during DST transitions. tzbucket gets this right.
+Naive local grouping often gets these boundaries wrong. `tzbucket` computes them explicitly.
 
 ## Key Features
 
-- **IANA timezone support**: Use any timezone like `Europe/Berlin`, `America/New_York`, `Asia/Tokyo`
-- **DST-aware bucketing**: Correctly handles 23-hour and 25-hour days
-- **Deterministic output**: Same input always produces same output
-- **Multiple output formats**: Human-readable or JSON for pipeline integration
-- **Three commands**: `bucket` for timestamps, `range` for bucket sequences, `explain` for DST debugging
+- IANA timezone support (via `chrono-tz`)
+- DST-aware day/week/month bucketing
+- Deterministic output
+- JSON and text output modes
+- Three subcommands: `bucket`, `range`, `explain`
 
 ## Install
 
@@ -39,8 +39,6 @@ Or download a pre-built binary from [Releases](https://github.com/TorstenCScholz
 
 ### Bucket timestamps
 
-Assign timestamps to day buckets in a timezone:
-
 ```bash
 # From a file
 tzbucket bucket --tz Europe/Berlin --interval day --format rfc3339 --input timestamps.txt
@@ -49,49 +47,41 @@ tzbucket bucket --tz Europe/Berlin --interval day --format rfc3339 --input times
 echo "2026-03-29T00:15:00Z" | tzbucket bucket --tz Europe/Berlin --format rfc3339
 
 # JSON output for pipelines
-tzbucket bucket --tz America/New_York --interval hour --input events.txt --output-format json
+tzbucket bucket --tz America/New_York --interval day --format rfc3339 --input events.txt --output-format json
 ```
 
 ### Generate bucket ranges
 
-Generate all buckets in a time range:
-
 ```bash
-tzbucket range --tz Europe/Berlin --interval day --start 2026-03-01T00:00:00Z --end 2026-04-01T00:00:00Z
+tzbucket range --tz Europe/Berlin --interval day --start 2026-03-01T00:00:00Z --end 2026-04-01T00:00:00Z --output-format json
 ```
 
 ### Explain local times
 
-Debug DST issues with local times:
-
 ```bash
-# Check if a local time exists
-tzbucket explain --tz Europe/Berlin --local 2026-03-29T02:30:00
+# Check DST status for a local time
+tzbucket explain --tz Europe/Berlin --local 2026-03-29T02:30:00 --output-format json
 
 # Resolve nonexistent times (spring forward)
-tzbucket explain --tz Europe/Berlin --local 2026-03-29T02:30:00 --policy-nonexistent shift_forward
+tzbucket explain --tz Europe/Berlin --local 2026-03-29T02:30:00 --policy-nonexistent shift_forward --output-format json
 
 # Resolve ambiguous times (fall back)
-tzbucket explain --tz Europe/Berlin --local 2026-10-25T02:30:00 --policy-ambiguous first
+tzbucket explain --tz Europe/Berlin --local 2026-10-25T02:30:00 --policy-ambiguous first --output-format json
 ```
 
 ## Output Contract
 
-### Bucket Key Formats
+### Bucket keys
 
-Each bucket is identified by a unique key:
+| Interval | Key Format | Example |
+|----------|------------|---------|
+| `day` | `YYYY-MM-DD` | `2026-03-29` |
+| `week` | `YYYY-MM-DD` | `2026-03-23` |
+| `month` | `YYYY-MM` | `2026-03` |
 
-| Interval | Key Format | Example | Description |
-|----------|------------|---------|-------------|
-| `day` | `YYYY-MM-DD` | `2026-03-29` | Calendar date in local timezone |
-| `week` | `YYYY-MM-DD` | `2026-03-23` | Week starting date (Monday or Sunday per `--week-start`) |
-| `month` | `YYYY-MM` | `2026-03` | Year and month in local timezone |
+Week keys use the week start date (not ISO week number).
 
-**Note:** Week keys use the week starting date, not ISO week numbers. This makes sorting and date range calculations straightforward.
-
-### bucket command
-
-Each input timestamp produces a JSON object with:
+### `bucket` output (NDJSON)
 
 ```json
 {
@@ -111,21 +101,7 @@ Each input timestamp produces a JSON object with:
 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `input.ts` | string | Original timestamp in RFC3339 format |
-| `input.epoch_ms` | integer | Unix timestamp in milliseconds |
-| `tz` | string | IANA timezone identifier |
-| `interval` | string | Bucket interval (`day`, `week`, `month`) |
-| `bucket.key` | string | Bucket identifier (see Key Formats above) |
-| `bucket.start_local` | string | Bucket start in local time with offset |
-| `bucket.end_local` | string | Bucket end in local time with offset |
-| `bucket.start_utc` | string | Bucket start in UTC |
-| `bucket.end_utc` | string | Bucket end in UTC |
-
-### range command
-
-Produces a JSON array of bucket objects:
+### `range` output (JSON array)
 
 ```json
 [
@@ -139,22 +115,19 @@ Produces a JSON array of bucket objects:
 ]
 ```
 
-### explain command
+### `explain` output examples
 
-**Normal time** (exists and is unambiguous):
+Normal local time:
 
 ```json
 {
   "local_time": "2026-03-15T14:30:00",
   "tz": "Europe/Berlin",
-  "status": "normal",
-  "resolution": {
-    "utc_time": "2026-03-15T13:30:00Z"
-  }
+  "status": "normal"
 }
 ```
 
-**Nonexistent time** (skipped during spring forward):
+Nonexistent local time with policy:
 
 ```json
 {
@@ -168,7 +141,7 @@ Produces a JSON array of bucket objects:
 }
 ```
 
-**Ambiguous time** (occurs twice during fall back):
+Ambiguous local time with policy:
 
 ```json
 {
@@ -182,82 +155,27 @@ Produces a JSON array of bucket objects:
 }
 ```
 
-**Error output** (no policy specified):
+Error in JSON mode (`--output-format json`):
 
 ```json
 {
   "error": "Nonexistent time '2026-03-29T02:30:00' in timezone 'Europe/Berlin'. Skipped due to DST spring forward. Use --policy-nonexistent=shift_forward to resolve.",
-  "status": "nonexistent",
-  "exit_code": 2
+  "exit_code": 2,
+  "status": "nonexistent"
 }
 ```
 
+Note: JSON errors are emitted to **stderr**.
+
 ## DST Notes
 
-### The Problem with Simple Grouping
-
-Consider grouping UTC timestamps by "day in Berlin" during DST transitions:
-
-**March 29, 2026 (Spring Forward in Berlin)**
-
-At 02:00, clocks jump to 03:00. The day has only 23 hours:
-
-| Bucket | Start UTC | End UTC | Duration |
-|--------|-----------|---------|----------|
-| 2026-03-28 | 2026-03-27T23:00:00Z | 2026-03-28T23:00:00Z | 24 hours |
-| 2026-03-29 | 2026-03-28T23:00:00Z | 2026-03-29T22:00:00Z | **23 hours** |
-| 2026-03-30 | 2026-03-29T22:00:00Z | 2026-03-30T22:00:00Z | 24 hours |
-
-**October 25, 2026 (Fall Back in Berlin)**
-
-At 03:00, clocks fall back to 02:00. The day has 25 hours:
-
-| Bucket | Start UTC | End UTC | Duration |
-|--------|-----------|---------|----------|
-| 2026-10-25 | 2026-10-24T22:00:00Z | 2026-10-25T23:00:00Z | **25 hours** |
-
-### Nonexistent Times
-
-During spring forward, local times in the skipped hour don't exist:
-
-- In Berlin on March 29, 2026: 02:00–02:59:59 never occurs
-- `2026-03-29T02:30:00` is **nonexistent**
-
-The `explain` command detects this. Use `--policy-nonexistent` to resolve:
-- `error` (default): Return error
-- `shift_forward`: Use the later time (02:30 → 03:30)
-- `shift_backward`: Use the earlier time (02:30 → 01:30)
-
-### Ambiguous Times
-
-During fall back, local times in the repeated hour occur twice:
-
-- In Berlin on October 25, 2026: 02:00–02:59:59 occurs twice
-- `2026-10-25T02:30:00` is **ambiguous** (02:30 CEST or 02:30 CET?)
-
-The `explain` command detects this. Use `--policy-ambiguous` to resolve:
-- `error` (default): Return error
-- `first`: Use the first occurrence (summer time, +02:00)
-- `second`: Use the second occurrence (winter time, +01:00)
-
-### How tzbucket Handles DST
-
-**bucket command**: Only accepts UTC instants, so no ambiguity. Each timestamp maps to exactly one bucket.
-
-**range command**: Generates buckets with correct UTC boundaries, including 23-hour and 25-hour days.
-
-**explain command**: Handles local times with explicit policies for nonexistent and ambiguous cases.
-
-For detailed DST documentation, see [`docs/dst_notes.md`](docs/dst_notes.md).
+For detailed DST examples and behavior notes, see [`docs/dst_notes.md`](docs/dst_notes.md).
 
 ## Development
 
 ```bash
 # Run tests
 cargo test --all
-
-# Update golden files after changing output
-UPDATE_GOLDEN=1 cargo test
 
 # Lint
 cargo clippy --all-targets -- -D warnings
@@ -268,10 +186,10 @@ cargo fmt --all
 
 ## Documentation
 
-- [`docs/dst_notes.md`](docs/dst_notes.md) - Detailed DST transition documentation
-- [`docs/output_format.md`](docs/output_format.md) - Complete output format specification
-- [`docs/architecture.md`](docs/architecture.md) - Internal architecture documentation
+- [`docs/dst_notes.md`](docs/dst_notes.md) - DST transition behavior
+- [`docs/output_format.md`](docs/output_format.md) - Output and error contract
+- [`docs/architecture.md`](docs/architecture.md) - Project architecture
 
 ## License
 
-Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT License](LICENSE-MIT) at your option.
+Licensed under either [Apache-2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT).
