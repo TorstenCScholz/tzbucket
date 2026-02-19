@@ -4,8 +4,6 @@ use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::process::{Command, Output};
 
-use similar::{ChangeTag, TextDiff};
-
 fn project_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -25,20 +23,6 @@ fn golden_dir() -> PathBuf {
 
 fn update_golden() -> bool {
     std::env::var("UPDATE_GOLDEN").is_ok()
-}
-
-fn diff_strings(expected: &str, actual: &str) -> String {
-    let diff = TextDiff::from_lines(expected, actual);
-    let mut out = String::new();
-    for change in diff.iter_all_changes() {
-        let sign = match change.tag() {
-            ChangeTag::Delete => "-",
-            ChangeTag::Insert => "+",
-            ChangeTag::Equal => " ",
-        };
-        out.push_str(&format!("{sign}{change}"));
-    }
-    out
 }
 
 /// Run the tzbucket CLI with the given arguments
@@ -626,7 +610,6 @@ fn golden_json_output() {
             )
         });
 
-        // Use JSON-aware comparison instead of string comparison
         assert_json_lines_eq(&actual, &expected);
     }
 }
