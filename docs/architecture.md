@@ -101,6 +101,21 @@ crates/tzbucket-cli/src/
 | `Timestamp` | Parsed input timestamp with both RFC3339 representation and epoch_ms |
 | `BucketResult` | Complete output for a single bucket operation including input, tz, interval, and bucket |
 
+### Bucket Key Formats
+
+Each bucket is identified by a unique key string:
+
+| Interval | Key Format | Example | Description |
+|----------|------------|---------|-------------|
+| `Day` | `YYYY-MM-DD` | `2026-03-29` | Calendar date in local timezone |
+| `Week` | `YYYY-MM-DD` | `2026-03-23` | Week starting date (Monday or Sunday per `WeekStart`) |
+| `Month` | `YYYY-MM` | `2026-03` | Year and month in local timezone |
+
+**Design Decision:** Week keys use the week starting date rather than ISO week numbers (e.g., `2026-W13`). This approach:
+- Makes sorting straightforward (lexicographic order = chronological order)
+- Allows easy determination of the exact date range from the key
+- Supports both Monday and Sunday week starts unambiguously
+
 ### Policy Configuration
 
 ```

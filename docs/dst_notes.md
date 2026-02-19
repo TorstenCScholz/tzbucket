@@ -189,6 +189,28 @@ Output:
 
 ## How tzbucket Handles DST
 
+tzbucket handles DST transitions naturally through proper timezone conversion. The key insight is that bucket boundaries are computed in local time first, then converted to UTC independently.
+
+### Natural DST Handling
+
+When computing a day bucket:
+
+1. **Find local midnight**: Start with 00:00:00 in the local timezone
+2. **Convert to UTC**: Each midnight boundary is converted independently to UTC
+3. **DST emerges naturally**: The UTC offset difference creates 23-hour or 25-hour days
+
+This approach means DST is handled correctly without special-case logic. The timezone database (via chrono-tz) provides the correct offset for each local timestamp.
+
+**Example: Berlin Spring Forward (March 29, 2026)**
+
+| Step | Local Time | UTC Time | Notes |
+|------|------------|----------|-------|
+| Day start | 2026-03-29T00:00:00+01:00 | 2026-03-28T23:00:00Z | Before DST switch |
+| Day end | 2026-03-30T00:00:00+02:00 | 2026-03-29T22:00:00Z | After DST switch |
+| **Duration** | - | **23 hours** | DST spring forward |
+
+The 23-hour duration emerges naturally from the offset change (+01:00 → +02:00).
+
 ### bucket command
 
 The `bucket` command only accepts UTC timestamps, so there's no ambiguity:

@@ -111,6 +111,9 @@ fn compute_day_bucket(local: &DateTime<Tz>) -> (NaiveDate, NaiveDate, String) {
 }
 
 /// Compute week bucket boundaries.
+///
+/// The bucket key uses the week starting date in `YYYY-MM-DD` format.
+/// This works for both Monday and Sunday week starts.
 fn compute_week_bucket(
     local: &DateTime<Tz>,
     week_start: WeekStart,
@@ -131,59 +134,9 @@ fn compute_week_bucket(
     let week_start_date = date - chrono::Duration::days(days_from_week_start);
     let week_end_date = week_start_date + chrono::Duration::weeks(1);
 
-    // Calculate ISO week number for the key
-    // For Monday start, use ISO week; for Sunday start, calculate differently
-    let (year, week_num) = match week_start {
-        WeekStart::Monday => {
-            let iso_week = week_start_date.iso_week();
-            (iso_week.year(), iso_week.week())
-        }
-        WeekStart::Sunday => {
-            // Calculate week number with Sunday as first day
-            calculate_sunday_week_number(&week_start_date)
-        }
-    };
-
-    let key = format!("{}-W{:02}", year, week_num);
+    // Use week starting date as the key (YYYY-MM-DD format)
+    let key = format!("{}", week_start_date.format("%Y-%m-%d"));
     (week_start_date, week_end_date, key)
-}
-
-/// Calculate week number with Sunday as the first day of the week.
-fn calculate_sunday_week_number(date: &NaiveDate) -> (i32, u32) {
-    let year = date.year();
-
-    // Find the first Sunday of the year (or last Sunday of previous year)
-    let jan1 = NaiveDate::from_ymd_opt(year, 1, 1).unwrap();
-    let jan1_weekday = jan1.weekday();
-
-    // Days to first Sunday (if Jan 1 is Sunday, this is 0)
-    let days_to_first_sunday = (7 - jan1_weekday.num_days_from_sunday()) % 7;
-    let first_sunday = jan1 + chrono::Duration::days(days_to_first_sunday as i64);
-
-    // If the date is before the first Sunday, it belongs to week 0 or last week of previous year
-    if *date < first_sunday && days_to_first_sunday > 0 {
-        // This date is in the last week of the previous year
-        let prev_year = year - 1;
-        let prev_dec31 = NaiveDate::from_ymd_opt(prev_year, 12, 31).unwrap();
-        let (_, prev_year_final_week) = calculate_sunday_week_number(&prev_dec31);
-        return (prev_year, prev_year_final_week);
-    }
-
-    // Calculate week number
-    let days_since_first_sunday = (*date - first_sunday).num_days();
-    let week_num = (days_since_first_sunday / 7) + 1;
-
-    // Check if this is week 53 and if it belongs to next year
-    if week_num > 52 {
-        // Check if this week extends into next year
-        let week_end = *date + chrono::Duration::days(6);
-        if week_end.year() != year {
-            // This is week 1 of next year
-            return (year + 1, 1);
-        }
-    }
-
-    (year, week_num as u32)
 }
 
 /// Compute month bucket boundaries.
@@ -333,7 +286,8 @@ mod tests {
         let tz = get_berlin_tz();
         let bucket = compute_bucket(instant, tz, Interval::Week, Some(WeekStart::Monday));
 
-        assert_eq!(bucket.key, "2026-W13");
+        // Key is the week starting date
+        assert_eq!(bucket.key, "2026-03-23");
         assert!(bucket.start_local.starts_with("2026-03-23"));
         assert!(bucket.end_local.starts_with("2026-03-30"));
     }
@@ -349,7 +303,8 @@ mod tests {
         let tz = get_berlin_tz();
         let bucket = compute_bucket(instant, tz, Interval::Week, Some(WeekStart::Sunday));
 
-        // Week starts on Sunday 2026-03-29
+        // Key is the week starting date (Sunday 2026-03-29)
+        assert_eq!(bucket.key, "2026-03-29");
         assert!(bucket.start_local.starts_with("2026-03-29"));
         assert!(bucket.end_local.starts_with("2026-04-05"));
     }

@@ -2,6 +2,23 @@
 
 This document specifies the JSON output format for all tzbucket commands.
 
+## Bucket Key Formats
+
+Each bucket is identified by a unique key string. The format depends on the interval:
+
+| Interval | Key Format | Example | Description |
+|----------|------------|---------|-------------|
+| `day` | `YYYY-MM-DD` | `2026-03-29` | Calendar date in local timezone |
+| `week` | `YYYY-MM-DD` | `2026-03-23` | Week starting date (Monday or Sunday depending on `--week-start`) |
+| `month` | `YYYY-MM` | `2026-03` | Year and month in local timezone |
+
+**Week Key Format:** The week bucket key uses the week starting date, not an ISO week number. This makes it easy to:
+- Sort buckets chronologically
+- Determine the exact date range from the key
+- Support both Monday and Sunday week starts unambiguously
+
+Example: Week starting Monday 2026-03-23 has key `2026-03-23`, regardless of which day of the week you're bucketing.
+
 ## Common Conventions
 
 ### Timestamp Formats
@@ -115,12 +132,26 @@ Note: `end_utc` - `start_utc` = 25 hours due to fall back.
 
 Generates a sequence of time buckets within a specified time range.
 
+### Range Semantics
+
+The range command uses **half-open interval** semantics: `[start, end)`
+
+- **Start is inclusive**: Buckets that start at or after the start timestamp are included
+- **End is exclusive**: Buckets that start at or after the end timestamp are excluded
+- **Intersection**: Generates all buckets that **intersect** the `[start, end)` range
+
+This means a bucket is included if any part of it overlaps with the range, even if the bucket starts before the range or ends after it. This is the most useful behavior for analytics and reporting use cases.
+
+**Example:** If you request range `2026-03-27T00:00:00Z` to `2026-03-28T12:00:00Z` in `Europe/Berlin`:
+- The bucket for `2026-03-27` (which runs from `2026-03-26T23:00:00Z` to `2026-03-27T23:00:00Z`) is included because it intersects the range
+- The bucket for `2026-03-28` (which runs from `2026-03-27T23:00:00Z` to `2026-03-28T22:00:00Z`) is included because it intersects the range
+
 ### Input
 
-- `--start`: Start timestamp (inclusive)
-- `--end`: End timestamp (exclusive)
+- `--start`: Start of range (inclusive, RFC3339)
+- `--end`: End of range (exclusive, RFC3339)
 - `--tz`: IANA timezone identifier
-- `--interval`: Bucket interval (`day` or `hour`)
+- `--interval`: Bucket interval (`day`, `week`, or `month`)
 
 ### Output
 

@@ -77,6 +77,18 @@ tzbucket explain --tz Europe/Berlin --local 2026-10-25T02:30:00 --policy-ambiguo
 
 ## Output Contract
 
+### Bucket Key Formats
+
+Each bucket is identified by a unique key:
+
+| Interval | Key Format | Example | Description |
+|----------|------------|---------|-------------|
+| `day` | `YYYY-MM-DD` | `2026-03-29` | Calendar date in local timezone |
+| `week` | `YYYY-MM-DD` | `2026-03-23` | Week starting date (Monday or Sunday per `--week-start`) |
+| `month` | `YYYY-MM` | `2026-03` | Year and month in local timezone |
+
+**Note:** Week keys use the week starting date, not ISO week numbers. This makes sorting and date range calculations straightforward.
+
 ### bucket command
 
 Each input timestamp produces a JSON object with:
@@ -104,8 +116,8 @@ Each input timestamp produces a JSON object with:
 | `input.ts` | string | Original timestamp in RFC3339 format |
 | `input.epoch_ms` | integer | Unix timestamp in milliseconds |
 | `tz` | string | IANA timezone identifier |
-| `interval` | string | Bucket interval (`day`, `hour`) |
-| `bucket.key` | string | Bucket identifier (date for day, datetime for hour) |
+| `interval` | string | Bucket interval (`day`, `week`, `month`) |
+| `bucket.key` | string | Bucket identifier (see Key Formats above) |
 | `bucket.start_local` | string | Bucket start in local time with offset |
 | `bucket.end_local` | string | Bucket end in local time with offset |
 | `bucket.start_utc` | string | Bucket start in UTC |

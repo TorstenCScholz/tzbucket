@@ -77,11 +77,11 @@ pub struct RangeArgs {
     #[arg(long, default_value = "monday")]
     week_start: String,
 
-    /// Start timestamp (RFC3339)
+    /// Start of range (inclusive, RFC3339)
     #[arg(long)]
     start: String,
 
-    /// End timestamp (RFC3339)
+    /// End of range (exclusive, RFC3339)
     #[arg(long)]
     end: String,
 
