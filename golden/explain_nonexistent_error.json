@@ -1,0 +1,1 @@
+{"error": "Nonexistent time '2026-03-29T02:30:00' in timezone 'Europe/Berlin'. Skipped due to DST spring forward. Use --policy-nonexistent=shift_forward to resolve.", "status": "nonexistent", "exit_code": 2}

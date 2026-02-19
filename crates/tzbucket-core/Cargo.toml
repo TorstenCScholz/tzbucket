@@ -1,11 +1,16 @@
 [package]
 name = "tzbucket-core"
-description = "A CLI tool — core library"
+description = "DST-safe time bucketing library"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
 [dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = "0.10"
 serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+
+[dev-dependencies]
 serde_json = "1"

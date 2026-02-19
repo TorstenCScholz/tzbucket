@@ -1,0 +1,9 @@
+{
+  "local_time": "2026-03-29T02:30:00",
+  "tz": "Europe/Berlin",
+  "status": "nonexistent",
+  "resolution": {
+    "policy": "shift_forward",
+    "result": "2026-03-29T03:30:00+02:00"
+  }
+}

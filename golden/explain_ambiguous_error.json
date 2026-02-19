@@ -1,0 +1,1 @@
+{"error": "Ambiguous time '2026-10-25T02:30:00' in timezone 'Europe/Berlin'. Occurs twice due to DST fall back. Use --policy-ambiguous=first or --policy-ambiguous=second to resolve.", "status": "ambiguous", "exit_code": 2}

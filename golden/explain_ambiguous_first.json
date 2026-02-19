@@ -1,0 +1,9 @@
+{
+  "local_time": "2026-10-25T02:30:00",
+  "tz": "Europe/Berlin",
+  "status": "ambiguous",
+  "resolution": {
+    "policy": "first",
+    "result": "2026-10-25T02:30:00+02:00"
+  }
+}
