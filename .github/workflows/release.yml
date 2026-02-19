@@ -39,27 +39,27 @@ jobs:
           key: ${{ matrix.target }}
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }} -p tool-cli
+        run: cargo build --release --target ${{ matrix.target }} -p tzbucket
 
       - name: Package (Unix)
         if: runner.os != 'Windows'
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../tool-cli-${{ matrix.target }}.tar.gz tool-cli
+          tar czf ../../../tzbucket-${{ matrix.target }}.tar.gz tzbucket
           cd ../../..
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
         run: |
           cd target/${{ matrix.target }}/release
-          7z a ../../../tool-cli-${{ matrix.target }}.zip tool-cli.exe
+          7z a ../../../tzbucket-${{ matrix.target }}.zip tzbucket.exe
           cd ../../..
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tool-cli-${{ matrix.target }}
-          path: tool-cli-${{ matrix.target }}.*
+          name: tzbucket-${{ matrix.target }}
+          path: tzbucket-${{ matrix.target }}.*
 
   release:
     needs: build

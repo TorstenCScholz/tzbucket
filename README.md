@@ -1,8 +1,8 @@
-# wtools-template
+# tzbucket
 
 > A template repository for small, weird-but-useful Rust CLI tools.
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/TorstenCScholz/tzbucket.git/actions/workflows/ci.yml/badge.svg)](https://github.com/TorstenCScholz/tzbucket.git/actions/workflows/ci.yml)
 
 ## Problem
 
@@ -11,25 +11,25 @@ _(Describe what problem this tool solves.)_
 ## Install
 
 ```sh
-cargo install tool-cli
+cargo install tzbucket
 ```
 
-Or download a pre-built binary from [Releases](https://github.com/OWNER/REPO/releases).
+Or download a pre-built binary from [Releases](https://github.com/TorstenCScholz/tzbucket.git/releases).
 
 ## Usage
 
 ```sh
 # Human-readable output
-tool-cli file.txt
+tzbucket file.txt
 
 # JSON output
-tool-cli --format json file.txt
+tzbucket --format json file.txt
 
 # Multiple files
-tool-cli --format json *.txt
+tzbucket --format json *.txt
 
 # Verbose logging
-tool-cli --verbose file.txt
+tzbucket --verbose file.txt
 ```
 
 ### Example output (text)
