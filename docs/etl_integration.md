@@ -149,3 +149,10 @@ What matters is:
 - Store generated bucket dimensions with partitioning and metadata (`tz`, `interval`, `generated_at`).
 - Monitor error exit codes (`2` input/policy, `3` runtime).
 - Add a regression test around known DST dates relevant to your business regions.
+
+## Related Problem-Focused Guides
+
+- `docs/spark_dst_bucketing.md`
+- `docs/sql_date_trunc_dst_pitfalls.md`
+- `docs/dst_etl_checklist.md`
+- `docs/migrate_from_naive_grouping.md`

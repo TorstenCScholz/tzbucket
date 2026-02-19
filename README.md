@@ -175,6 +175,13 @@ For detailed DST examples and behavior notes, see [`docs/dst_notes.md`](docs/dst
 
 For practical, real-world pipeline patterns (Spark, Airflow, dbt/warehouse, Kubernetes batch), see [`docs/etl_integration.md`](docs/etl_integration.md).
 
+## Practical Use Cases
+
+- Spark timezone day grouping DST errors: [`docs/spark_dst_bucketing.md`](docs/spark_dst_bucketing.md)
+- SQL `date_trunc` timezone DST pitfalls: [`docs/sql_date_trunc_dst_pitfalls.md`](docs/sql_date_trunc_dst_pitfalls.md)
+- ETL DST readiness checklist: [`docs/dst_etl_checklist.md`](docs/dst_etl_checklist.md)
+- Migration guide from naive grouping: [`docs/migrate_from_naive_grouping.md`](docs/migrate_from_naive_grouping.md)
+
 ## Development
 
 ```bash
@@ -194,6 +201,10 @@ cargo fmt --all
 - [`docs/output_format.md`](docs/output_format.md) - Output and error contract
 - [`docs/architecture.md`](docs/architecture.md) - Project architecture
 - [`docs/etl_integration.md`](docs/etl_integration.md) - Integration patterns for ETL pipelines
+- [`docs/spark_dst_bucketing.md`](docs/spark_dst_bucketing.md) - Spark DST grouping fixes
+- [`docs/sql_date_trunc_dst_pitfalls.md`](docs/sql_date_trunc_dst_pitfalls.md) - SQL timezone truncation pitfalls
+- [`docs/dst_etl_checklist.md`](docs/dst_etl_checklist.md) - Production DST checklist
+- [`docs/migrate_from_naive_grouping.md`](docs/migrate_from_naive_grouping.md) - Migration playbook
 
 ## License
 
